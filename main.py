@@ -4,38 +4,53 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
+import re
+from selenium.webdriver.support.ui import WebDriverWait
 
-driver = webdriver.Chrome()
-pageurl = "https://apl.unob.cz/StudentskeHodnoceni"
-driver.get(pageurl) # source <- (pageurl) # http://intranet.unob.cz
+driver = webdriver.Chrome('/path/to/chromedriver')
+pageurl = "https://apl.unob.cz/StudentskeHodnoceni/Student/StatistikaPredm"
+driver.get(pageurl)
 
 #assert "Python" in driver.title
 
 # zadání autentizačních dat
-source = driver.page_source # vždy po spuštění kódu
-print(source)
+source = driver.page_source # vždy po spuštění kódu <-- breakpoint, pozastavení programu pro zadání údajů 
+# print(source)
 
-elem = driver.find_element(By.NAME, "q") # <-- breakpoint, pozastavení programu pro zadání údajů 
-elem.clear()
-elem.send_keys("pycon")
-elem.send_keys(Keys.RETURN)
-assert "No results found." not in driver.page_source
+# choice of school year
+dropdown1 = Select(driver.find_element(By.XPATH, "//*[@id='AkRokSelectList_SelectedUic']"))
+dropdown1.select_by_visible_text("2020/2021")
 
-# Selecting options from dropdown menus
-dropdown1 = Select(driver.find_element(By.XPATH, "//select[@name='dropdown1_name']"))
-dropdown1.select_by_visible_text("Option 1")
+# choice of semestr
+dropdown2 = Select(driver.find_element(By.XPATH, "//*[@id='SemestrSelectList_SelectedUic']"))
+dropdown2.select_by_visible_text("Zimní semestr")
 
-dropdown2 = Select(driver.find_element(By.XPATH, "//select[@name='dropdown2_name']"))
-dropdown2.select_by_value("option_value")
-
-# Click the enter button (assuming it has an ID attribute)
-enter_button = driver.find_element(By.ID, "enter_button_id")
-enter_button.click()
-
-driver.close()
-
-reg = "<text([^<]*)<tspan([^>]*)>([^<]*)" # https://regex101.com/
+# submit
+submitButton = driver.find_element(By.XPATH, "//a[@class='btn btn-default btn-sm showPredmetyStatistika']")
+submitButton.click()
 
 data = []
 
-# driver.find_element_by_xpath("//select[@name='element_name']/option[text()='option_text']").click() # výběr z dropdown menu
+reg = "<text([^<]*)<tspan([^>]*)>([^<]*)" 
+
+buttons = driver.find_elements(By.XPATH, "//a[@class='btn btn-default btn-xs statistikaHodnoceniPredm']")
+# print(buttons)
+for button in buttons:
+    button.click()
+    # Zde je potřeba počkat na načtení "pop-up" okna, pak pokračovat
+    dataFromButton = re.compile("<text([^<]*)<tspan([^>]*)>([^<]*)")    # TODO: scrape data for element in our DB
+    data.append(dataFromButton)
+    print(data)
+
+    closeButton = driver.find_element(By.XPATH, "//a[@class='close']")
+    closeButton.click()
+
+#reg = "<text([^<]*)<tspan([^>]*)>([^<]*)" # https://regex101.com/
+
+driver.close()
+
+import json
+
+output_file = "data.json"
+with open(output_file, "w") as file:
+    json.dump(data, file)
