@@ -1,17 +1,14 @@
-# print("hello world")
-
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 import re
-from selenium.webdriver.support.ui import WebDriverWait
+#from selenium.webdriver.support.ui import WebDriverWait
 
 driver = webdriver.Chrome('/path/to/chromedriver')
 pageurl = "https://apl.unob.cz/StudentskeHodnoceni/Student/StatistikaPredm"
 driver.get(pageurl)
 
-#assert "Python" in driver.title
 
 # zadání autentizačních dat
 source = driver.page_source # vždy po spuštění kódu <-- breakpoint, pozastavení programu pro zadání údajů 
@@ -31,26 +28,37 @@ submitButton.click()
 
 data = []
 
-reg = "<text([^<]*)<tspan([^>]*)>([^<]*)" 
-
 buttons = driver.find_elements(By.XPATH, "//a[@class='btn btn-default btn-xs statistikaHodnoceniPredm']")
-# print(buttons)
+
 for button in buttons:
     button.click()
-    # Zde je potřeba počkat na načtení "pop-up" okna, pak pokračovat
-    dataFromButton = re.compile("<text([^<]*)<tspan([^>]*)>([^<]*)")    # TODO: scrape data for element in our DB
-    data.append(dataFromButton)
-    print(data)
+    # POČKEJ, NEŽ SE NAČTE OKNO
+    ps=driver.page_source
+    position=ps.index("axis-y")-20
+    pageData=ps[position-20:position+5000] # vezme kus kódu ze stránky ve stanoveném rozmezí
+    #print(pageData)
+    pattern = r'<*"0" dy="0.32em">(.*?)<'
+    tspan_elements = re.findall(pattern, pageData)
+    #print(tspan_elements)
+
+    for tspan_element in tspan_elements:
+        name, order = tspan_element.split(". ")
+        print(name)
+        print(order)
+        data.append({
+            'name': name,
+            'order': order
+        })
+        #print(tspan_element)
 
     closeButton = driver.find_element(By.XPATH, "//a[@class='close']")
     closeButton.click()
 
-#reg = "<text([^<]*)<tspan([^>]*)>([^<]*)" # https://regex101.com/
 
 driver.close()
 
 import json
 
-output_file = "data.json"
+output_file = "data.json" 
 with open(output_file, "w") as file:
     json.dump(data, file)
