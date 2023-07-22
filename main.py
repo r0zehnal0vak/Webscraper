@@ -11,7 +11,7 @@ driver.get(pageurl)
 
 
 # zadání autentizačních dat
-source = driver.page_source # vždy po spuštění kódu <-- breakpoint, pozastavení programu pro zadání údajů 
+source = driver.page_source # <-- breakpoint, pozastavení programu pro zadání údajů 
 # print(source)
 
 # choice of school year
@@ -38,13 +38,14 @@ for button in buttons:
     pageData=ps[position-20:position+5000] # vezme kus kódu ze stránky ve stanoveném rozmezí
     #print(pageData)
     pattern = r'<*"0" dy="0.32em">(.*?)<'
+    #pattern2 = r'<*"0" dy="1.4200000000000002em">(.*?)<'
     tspan_elements = re.findall(pattern, pageData)
-    #print(tspan_elements)
+    print(tspan_elements)
 
     for tspan_element in tspan_elements:
-        name, order = tspan_element.split(". ")
-        print(name)
+        order, name = tspan_element.split(". ")
         print(order)
+        print(name)
         data.append({
             'name': name,
             'order': order
@@ -60,5 +61,5 @@ driver.close()
 import json
 
 output_file = "data.json" 
-with open(output_file, "w") as file:
-    json.dump(data, file)
+with open(output_file, "w", encoding="utf-8") as file:
+    json.dump(data, file, ensure_ascii=False)
